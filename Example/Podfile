@@ -1,0 +1,18 @@
+platform:ios,'9.0'
+#use_frameworks!
+
+target 'Example' do
+  ### WebSocket
+  pod 'GCDWebSocket', :path => '../GCDWebSocket.podspec', :subspecs => ['Core', 'EchoServer']
+  
+  ### Logger
+  pod 'CocoaLumberjack', '~> 3.7.4'
+  pod 'CCDBucket'
+  
+  pod 'libextobjc', '~> 0.6'
+  pod 'AFNetworking', '~> 4.0.1'
+  pod 'SocketRocket', '0.5.1'
+  
+end
+
+
