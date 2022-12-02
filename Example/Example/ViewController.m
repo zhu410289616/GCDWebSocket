@@ -160,7 +160,7 @@ SRWebSocketDelegate
     NSString *testData = @"create the text for test, then send this string to server; server will echo this string when received.";
     [self.websocketClient send:testData];
     //start heartbeat loop
-//    [self startHeartbeatTimerWith:5];
+    [self startHeartbeatTimerWith:5];
 }
 
 - (void)webSocket:(SRWebSocket *)webSocket didFailWithError:(NSError *)error

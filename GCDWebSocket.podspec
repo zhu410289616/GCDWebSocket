@@ -7,7 +7,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'GCDWebSocket'
-  s.version  = '0.0.1'
+  s.version  = '0.0.2'
   s.author   =  { 'zhuruhong' => 'zhu410289616@163.com' }
   s.license  = { :type => 'BSD', :file => 'LICENSE' }
   s.homepage = 'https://github.com/zhu410289616/GCDWebSocket'
