@@ -160,7 +160,7 @@ SRWebSocketDelegate
     NSString *testData = @"create the text for test, then send this string to server; server will echo this string when received.";
     [self.websocketClient send:testData];
     //start heartbeat loop
-//    [self startHeartbeatTimerWith:5];
+    [self startHeartbeatTimerWith:5];
 }
 
 - (void)webSocket:(SRWebSocket *)webSocket didFailWithError:(NSError *)error
@@ -186,12 +186,18 @@ SRWebSocketDelegate
 - (void)webServerDidStart:(GCDWebServer*)server
 {
     DDLogDebug(@"[WebServer] start: %@", server.serverURL);
-    self.statusLabel.text = server.serverURL.absoluteString;
+    self.statusLabel.text = [NSString stringWithFormat:@"ws://%@:%@", server.serverURL.host, server.serverURL.port];
+    NSString *text = [NSString stringWithFormat:@"[WebServer] start: %@\n\n", server.serverURL];
+    [self.textView insertText:text];
+    [self.textView scrollRangeToVisible:NSMakeRange(-1, 1)];
 }
 
 - (void)webServerDidCompleteBonjourRegistration:(GCDWebServer*)server
 {
     DDLogDebug(@"[WebServer] Bonjour: %@", server.bonjourServerURL);
+    NSString *text = [NSString stringWithFormat:@"[WebServer] Bonjour: %@\n\n", server.bonjourServerURL];
+    [self.textView insertText:text];
+    [self.textView scrollRangeToVisible:NSMakeRange(-1, 1)];
 }
 
 - (void)webServerDidStop:(GCDWebServer*)server
@@ -204,7 +210,7 @@ SRWebSocketDelegate
 - (void)transportWillBegin:(GCDWebServerConnection *)transport
 {
     //one connection will callback by this method when it open
-    NSString *text = [NSString stringWithFormat:@"[%@] connection[%p] will begin\n", [self getCurrentTime], transport];
+    NSString *text = [NSString stringWithFormat:@"[%@] connection[%p] will begin\n\n", [self getCurrentTime], transport];
     [self.textView insertText:text];
     [self.textView scrollRangeToVisible:NSMakeRange(-1, 1)];
 }
@@ -221,7 +227,7 @@ SRWebSocketDelegate
 {
     //server got the msg by this method
     NSString *content = [[NSString alloc] initWithData:msg.body.payload encoding:NSUTF8StringEncoding];
-    NSString *text = [NSString stringWithFormat:@"[%@] connection[%p] received: opcode=%d, payload=%@\n", [self getCurrentTime], transport, msg.header.opcode, content];
+    NSString *text = [NSString stringWithFormat:@"[%@] connection[%p] received: opcode=%d, payload=%@\n\n", [self getCurrentTime], transport, msg.header.opcode, content];
     [self.textView insertText:text];
     [self.textView scrollRangeToVisible:NSMakeRange(-1, 1)];
     
