@@ -1,6 +1,15 @@
 # GCDWebSocket
 GCDWebSocket base GCDWebServer
 
+# pod
+```
+pod 'GCDWebSocket', '~> 0.0.1'
+```
+
+```
+pod 'GCDWebSocket', '~> 0.0.1', :subspecs => ['Core', 'EchoServer']
+```
+
 # function
 ## start websocket server
 ``` 
