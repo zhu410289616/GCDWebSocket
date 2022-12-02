@@ -40,7 +40,7 @@
         _decoder = [[GCDWebSocketDecoder alloc] init];
         _encoder = [[GCDWebSocketEncoder alloc] init];
         // callback
-        [_wsServer transportWillStart:self];
+        [_wsServer transportWillBegin:self];
     }
     return self;
 }
@@ -181,46 +181,17 @@
 
 - (void)receiveMessage:(GCDWebSocketMessage)message
 {
-    GWS_LOG_DEBUG(@"------> [WebSocketServer] received: %@", message.body.payload);
-    
-    // callback
-    if ([self.wsServer.transport respondsToSelector:@selector(transport:received:)]) {
-        [self.wsServer.transport transport:self received:message];
+    // opcode logic
+    if (message.header.opcode == GCDWebSocketOpcodeConnectionClose) {
+        [self stopTransmitData];
+        return;
     }
     
-    // opcode logic
-    switch (message.header.opcode) {
-        case GCDWebSocketOpcodeConnectionClose:
-        {
-            [self stopTransmitData];
-        }
-            break;
-        case GCDWebSocketOpcodePing:
-        {
-            // websocket ping/pong
-            NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
-            NSString *ping = [NSString stringWithFormat:@"{\"pong_time\": \"%f\"}", now];
-            NSData *pingData = [ping dataUsingEncoding:NSUTF8StringEncoding];
-            
-            GCDWebSocketMessage pong;
-            pong.header.fin = YES;
-            pong.header.opcode = GCDWebSocketOpcodePong;
-            pong.body.payload = pingData;
-            [self sendMessage:pong];
-        }
-            break;
-        case GCDWebSocketOpcodeTextFrame:
-        {
-#ifdef DEBUG
-            NSString *content = [[NSString alloc] initWithData:message.body.payload encoding:NSUTF8StringEncoding];
-            GWS_LOG_DEBUG(@"--------> text frame: %@", content);
-#endif
-        }
-            break;
-            
-        default:
-            break;
-    }//switch
+    // callback
+    if ([self.wsServer respondsToSelector:@selector(transport:received:)]) {
+        [self.wsServer transport:self received:message];
+    }
+    
 }
 
 #pragma mark - send

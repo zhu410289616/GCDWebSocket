@@ -7,28 +7,39 @@
 
 #import "GCDWebSocketServer.h"
 #import <GCDWebServer/GCDWebServerPrivate.h>
+#import <pthread/pthread.h>
+#import "GCDWebServerTimer.h"
 #import "GCDWebServerResponse+WebSocket.h"
 #import "GCDWebSocketServerConnection.h"
 
-NSString *GCDWebServerConnectionKey(GCDWebServerConnection *con)
+static inline NSString *GCDWebServerConnectionKey(GCDWebServerConnection *con)
 {
     return GCDWebServerComputeMD5Digest(@"%p%@%@", con, con.remoteAddressString, con.localAddressString);
 }
 
 @interface GCDWebSocketServer ()
+{
+    pthread_rwlock_t _con_rwlock;
+}
 
 @property (nonatomic, strong) NSMutableDictionary *connectionsDic;
-@property (nonatomic, strong) NSTimer *checkTimer;
+@property (nonatomic, strong) GCDWebServerTimer *checkTimer;
 
 @end
 
 @implementation GCDWebSocketServer
+
+- (void)dealloc
+{
+    pthread_rwlock_destroy(&_con_rwlock);
+}
 
 - (instancetype)init
 {
     self = [super init];
     if (self) {
         _timeout = 30;
+        pthread_rwlock_init(&_con_rwlock, NULL);
         _connectionsDic = @{}.mutableCopy;
         [self addHandlerForMethod:@"GET" pathRegex:@"^/" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse * _Nullable(__kindof GCDWebServerRequest * _Nonnull request) {
             return [GCDWebServerResponse responseWith:request];
@@ -67,15 +78,18 @@ NSString *GCDWebServerConnectionKey(GCDWebServerConnection *con)
 {
     [self stopCheckTimer];
     
-    self.checkTimer = [NSTimer scheduledTimerWithTimeInterval:interval target:self selector:@selector(doCheckAction) userInfo:nil repeats:YES];
+    self.checkTimer = [GCDWebServerTimer scheduledTimerWithTimeInterval:interval target:self selector:@selector(doCheckAction) userInfo:nil repeats:YES];
 }
 
 - (void)doCheckAction
 {
+    pthread_rwlock_rdlock(&_con_rwlock);
+    NSDictionary<NSString *, id> *tempConnectionsDic = [self.connectionsDic copy];
+    pthread_rwlock_unlock(&_con_rwlock);
+    
     //check connection
     NSTimeInterval currentTime = CFAbsoluteTimeGetCurrent();
     NSMutableArray *timeoutConnectionKeys = [NSMutableArray array];
-    NSDictionary<NSString *, id> *tempConnectionsDic = [self.connectionsDic copy];
     [tempConnectionsDic enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
         GCDWebSocketServerConnection *con = nil;
         if ([obj isKindOfClass:[GCDWebSocketServerConnection class]]) {
@@ -89,31 +103,61 @@ NSString *GCDWebServerConnectionKey(GCDWebServerConnection *con)
             [timeoutConnectionKeys addObject:key];
         }
     }];
+    
+    pthread_rwlock_wrlock(&_con_rwlock);
     [self.connectionsDic removeObjectsForKeys:timeoutConnectionKeys];
+    pthread_rwlock_unlock(&_con_rwlock);
 }
 
 @end
 
-@implementation GCDWebSocketServer (Connection)
+@implementation GCDWebSocketServer (Transport)
 
-- (void)transportWillStart:(GCDWebServerConnection *)connection
+- (void)transportWillBegin:(GCDWebServerConnection *)connection
 {
-    if ([self.transport respondsToSelector:@selector(transportWillStart:)]) {
-        [self.transport transportWillStart:connection];
-    }
-    
+    pthread_rwlock_wrlock(&_con_rwlock);
     NSString *key = GCDWebServerConnectionKey(connection);
     [self.connectionsDic setValue:connection forKey:key];
+    pthread_rwlock_unlock(&_con_rwlock);
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!connection) {
+            return;
+        }
+        if ([self.transport respondsToSelector:@selector(transportWillBegin:)]) {
+            [self.transport transportWillBegin:connection];
+        }
+    });
 }
 
 - (void)transportWillEnd:(GCDWebServerConnection *)connection
 {
-    if ([self.transport respondsToSelector:@selector(transportWillEnd:)]) {
-        [self.transport transportWillEnd:connection];
-    }
-    
+    pthread_rwlock_wrlock(&_con_rwlock);
     NSString *key = GCDWebServerConnectionKey(connection);
+    GCDWebServerConnection *tempCon = [self.connectionsDic objectForKey:key];
     [self.connectionsDic removeObjectForKey:key];
+    pthread_rwlock_unlock(&_con_rwlock);
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!tempCon) {
+            return;
+        }
+        if ([self.transport respondsToSelector:@selector(transportWillEnd:)]) {
+            [self.transport transportWillEnd:tempCon];
+        }
+    });
+}
+
+- (void)transport:(GCDWebServerConnection *)connection received:(GCDWebSocketMessage)message
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!connection) {
+            return;
+        }
+        if ([self.transport respondsToSelector:@selector(transport:received:)]) {
+            [self.transport transport:connection received:message];
+        }
+    });
 }
 
 @end

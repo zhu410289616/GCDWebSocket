@@ -14,9 +14,9 @@
 
 @optional
 
-- (void)transportWillStart:(GCDWebServerConnection *)transport;
-- (void)transportWillEnd:(GCDWebServerConnection *)transport;
-- (void)transport:(GCDWebServerConnection *)transport received:(GCDWebSocketMessage)msg;
+- (void)transportWillBegin:(GCDWebServerConnection *)connection;
+- (void)transportWillEnd:(GCDWebServerConnection *)connection;
+- (void)transport:(GCDWebServerConnection *)connection received:(GCDWebSocketMessage)message;
 
 @end
 
@@ -29,9 +29,6 @@
 
 @end
 
-@interface GCDWebSocketServer (Transport)
-
-- (void)transportWillStart:(GCDWebServerConnection *)connection;
-- (void)transportWillEnd:(GCDWebServerConnection *)connection;
+@interface GCDWebSocketServer (Transport) <GCDWebSocketServerTransport>
 
 @end
