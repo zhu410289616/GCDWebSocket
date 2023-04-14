@@ -22,9 +22,9 @@ PODS:
     - CocoaLumberjack/Core (= 3.7.4)
   - CocoaLumberjack/Core (3.7.4)
   - GCDWebServer/Core (3.5.4)
-  - GCDWebSocket/Core (0.0.1):
+  - GCDWebSocket/Core (0.0.2):
     - GCDWebServer/Core
-  - GCDWebSocket/EchoServer (0.0.1):
+  - GCDWebSocket/EchoServer (0.0.2):
     - GCDWebSocket/Core
   - libextobjc (0.6):
     - libextobjc/EXTADT (= 0.6)
@@ -86,11 +86,11 @@ EXTERNAL SOURCES:
     :path: "../GCDWebSocket.podspec"
 
 SPEC CHECKSUMS:
-  AFNetworking: 7864c38297c79aaca1500c33288e429c3451fdce
+  AFNetworking: 3bd23d814e976cd148d7d44c3ab78017b744cd58
   CCDBucket: 852264749f82ce0cf856b1c6a4f9bf1e921616e8
   CocoaLumberjack: 543c79c114dadc3b1aba95641d8738b06b05b646
   GCDWebServer: 2c156a56c8226e2d5c0c3f208a3621ccffbe3ce4
-  GCDWebSocket: 53676285eb3074bf29d1bbc726225dd8e794b9d6
+  GCDWebSocket: 584a6a7421ffc2d8a970553f2cb311dfef8ccd54
   libextobjc: aed8b7d2b07f511c1a7ecaacb33ea03e327c69b7
   SocketRocket: d57c7159b83c3c6655745cd15302aa24b6bae531
 
